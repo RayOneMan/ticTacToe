@@ -20,7 +20,7 @@ function startGame()
 {
    
     while (true) {
-        $command = prompt("Enter key(--new,--list,--exit)");
+        $command = prompt("Enter key(--new,--list,--help,--exit)");
         $gameBoard = new Board();
         if ($command == "--new" || $command == "-n") {
         $gameBoard = new Board();
@@ -32,9 +32,14 @@ function startGame()
         } elseif (preg_match('/(^--replay [0-9]+$)/', $command) != 0) {
             $id = explode(' ', $command)[1];
             replayGame($gameBoard, $id);
-        } elseif ($command == "--exit" || $command == "-e") {
+        } 
+		elseif ($command == "--help" || $command == "-h") {
+		gameHelp();
+		}
+		elseif ($command == "--exit" || $command == "-e") {
             exit("Thanks for using\n");
-        } else {
+        }
+		else {
             line("Key not found");
         }
     }
@@ -142,3 +147,12 @@ function inviteToContinue(&$canContinue)
         }
     } while ($answer !== "y" && $answer !== "n");
 }
+
+function gameHelp(){
+	line("'Tic-tac-toe' with a computer on a field of arbitrary size (from 3x3 to 10x10)");
+	line("You can use following keys when start the program:");
+	line("--new or -n - start new game;");
+	line("--list or -l - show list of all games;");
+	line("--help or -h - show short info about the game.");
+	line("--exit or -e - exit from the game.");
+	}
