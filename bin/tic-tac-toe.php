@@ -1,4 +1,5 @@
 <?php
+
     $autoloadPathForGithub = __DIR__.'/../vendor/autoload.php';
     $autoloadPathForPackagist = __DIR__.'/../../../autoload.php';
 
@@ -8,7 +9,7 @@
         require_once($autoloadPathForPackagist);
     }
 
-    use function OneRayMan\ticTacToe\Controller\startGame;
+    use function onerayman\ticTacToe\Controller\startGame;
 
     startGame();
 ?>
