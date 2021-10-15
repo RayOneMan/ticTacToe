@@ -1,6 +1,6 @@
 <?php 
 	namespace onerayman\TicTacToe\View;
-
+    use SQLite3;
     use function cli\prompt;
     use function cli\line;
     use function cli\out;

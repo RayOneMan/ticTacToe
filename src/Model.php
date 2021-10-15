@@ -4,6 +4,7 @@ namespace onerayman\TicTacToe\Model;
 
 use Exception as Exception;
 use LogicException as LogicException;
+use SQLite3;
 
 const DEFAULT_DIMENSION = 3;
 const DEFAULT_MARKUP = " ";
@@ -18,6 +19,9 @@ class Board
     private $userMarkup;
     private $computerMarkup;
     private $freeSpaceCount;
+    private $user_name;
+    private $game_id;
+    private $turn_number;
 
     public function __construct()
     {
@@ -161,6 +165,15 @@ class Board
         }
     }
 
+    public function setId($id)
+    {
+        if (is_numeric($id)) {
+            return $this->game_id = $id;
+        } else {
+            throw new Exception("Incorrect id");
+        }
+    }
+
     public function getDimension()
     {
         return $this->dimension;
@@ -179,5 +192,62 @@ class Board
     public function isFreeSpaceEnough()
     {
         return $this->freeSpaceCount !== 0;
+    }
+
+    public function setUserName($name)
+    {
+        return $this->user_name = $name;
+    }
+
+    public function getUser()
+    {
+        return $this->user_name;
+    }
+
+    public function getGameId()
+    {
+        return $this->game_id;
+    }
+
+    public function getMarkup()
+    {
+        return $this->userMarkup;
+    }
+
+    public function openDatabase()
+    {
+        if (!file_exists("gamedb.db")) {
+            $db = new \SQLite3('gamedb.db');
+
+            $gamesInfoTable = "CREATE TABLE gamesInfo(
+                idGame INTEGER PRIMARY KEY,
+                gameData DATE,
+                gameTime TIME,
+                playerName TEXT,
+                sizeBoard INTEGER,
+                result TEXT
+            )";
+            $db->exec($gamesInfoTable);
+
+
+            $stepsInfoTable = "CREATE TABLE stepsInfo(
+                idGame INTEGER,
+                playerMark TEXT,
+                rowCoord INTEGER,
+                colCoord INTEGER
+            )";
+            $db->exec($stepsInfoTable);
+        } else {
+            $db = new \SQLite3('gamedb.db');
+        }
+        return $db;
+    }
+
+    public function endGame($idGame, $result)
+    {
+        $db = $this->openDatabase();
+        $db->exec("UPDATE gamesInfo
+            SET result = '$result'
+            WHERE idGame = '$idGame'");
     }
 }
