@@ -19,7 +19,7 @@ function showGameBoard($board)
         }
         line();
     }
-    line("-------------------------------------------");
+    line("<-------------------->");
 }
 
 function showMessage($msg)

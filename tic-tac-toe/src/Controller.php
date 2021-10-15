@@ -21,7 +21,7 @@ function startGame()
 {
    
     while (true) {
-        $command = prompt("Enter key(--new,--list,--help,--exit)");
+        $command = prompt("Enter key(--new,--list, --replay [0-9], --help,--exit)");
         $gameBoard = new Board();
         if ($command == "--new" || $command == "-n") {
             play($gameBoard);
@@ -183,11 +183,10 @@ function getCoords($board)
     }
     return $coords;
 }
-
 function processComputerTurn($board, $markup, &$stopGame, $db)
 {
     $idGame = $board->getGameId();
-    $mark = 'O';
+    $mark = $board->getComputerMarkup();
     $answerTaked = false;
     do {
         $i = rand(0, $board->getDimension() - 1);
@@ -223,7 +222,7 @@ function inviteToContinue(&$canContinue)
     do {
         $answer = getValue("Do you want to continue? (y/n)");
         if ($answer === "y") {
-            $canContinue = true;
+            startGame();
         } elseif ($answer === "n") {
             exit("Thanks for using\n");
         }
