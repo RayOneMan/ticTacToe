@@ -11,5 +11,5 @@
 
     use function onerayman\ticTacToe\Controller\startGame;
 
-    startGame();
+    startGame($argv);
 ?>

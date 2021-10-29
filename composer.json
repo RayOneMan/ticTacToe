@@ -9,6 +9,7 @@
   ],
   "description": "",
   "require": {
+    "gabordemooij/redbean": "dev-master",
     "wp-cli/php-cli-tools": "^0.11.13"
   },
   "bin": [

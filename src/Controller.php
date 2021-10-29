@@ -4,7 +4,7 @@
     use onerayman\ticTacToe\Model\Board as Board;
     use Exception as Exception;
     use LogicException as LogicException;
-    use SQLite3;
+    use RedBeanPHP\R as R;
 	
 	use function cli\prompt;
     use function cli\line;
@@ -17,32 +17,36 @@
     use const onerayman\TicTacToe\Model\PLAYER_X_MARKUP;
     use const onerayman\TicTacToe\Model\PLAYER_O_MARKUP;
 
-function startGame()
+function startGame($argv)
 {
-   
+    if (file_exists("gamedb.db")) {
+        R::setup("sqlite:gamedb.db");
+    }
     while (true) {
         $command = prompt("Enter key(--new,--list, --replay [0-9], --help,--exit)");
-        $gameBoard = new Board();
-        if ($command == "--new" || $command == "-n") {
-            play($gameBoard);
-        } elseif ($command == "--list" || $command == "-l") {
-            listGames($gameBoard);
-        } elseif (preg_match('/(^--replay [0-9]+$)/', $command) != 0) {
-            $id = explode(' ', $command)[1];
-            replayGame($gameBoard, $id);
-        } 
-		elseif ($command == "--help" || $command == "-h") {
-		    gameHelp();
-		}
-		elseif ($command == "--exit" || $command == "-e") {
-            exit("Thanks for using\n");
+        if (count($argv) <= 1 || $argv[1] === "--new" || $argv[1] === "-n") {
+        play();
+    } elseif ($argv[1] === "--list" || $argv[1] === "-l") {
+        listGames();
+    } elseif ($argv[1] === "--replay" || $argv[1] === "-r") {
+        if (array_key_exists(2, $argv)) {
+            $id = $argv[2];
+            replayGame($id);
+        } else {
+            \cli\line("There is no id");
         }
-		else {
-            line("Key not found");
+     } elseif ($argv[1] === "--help" || $argv[1] === "-h") {
+            gameHelp();
+        }
+    
+     else {
+        \cli\line("Unknown argument!") ;
         }
     }
 }
-function play($gameBoard) {
+
+function play() {
+    $gameBoard = new Board();
     $canContinue = true;
     do {
         
@@ -55,7 +59,7 @@ function initialize($board)
 {
     try {
         $board->setUserName(getValue("Enter user name"));
-        $board->setDimension(getValue("Enter the field size "));
+        $board->setDimension(getValue("Enter board-size"));
         $board->initialize();
     } catch (Exception $e) {
         showMessage($e->getMessage());
@@ -76,7 +80,7 @@ function gameLoop($board)
     $playerName =  $board->getUser();
     $size = $board->getDimension();
 
-    $db->exec("INSERT INTO gamesInfo (
+    R::exec("INSERT INTO gamesInfo (
         gameData, 
         gameTime, 
         playerName, 
@@ -89,7 +93,7 @@ function gameLoop($board)
         '$size', 
         'НЕ ЗАКОНЧЕНО')");
 
-    $id = $db->querySingle("SELECT idGame FROM gamesInfo ORDER BY idGame DESC LIMIT 1");
+    $id = R::getCell("SELECT idGame FROM gamesInfo ORDER BY idGame DESC LIMIT 1");
 
     $board->setId($id);
     $gameId = $board->getGameId();
@@ -128,9 +132,6 @@ function gameLoop($board)
         $result = 'ПОРАЖЕНИЕ';
         $board->endGame($gameId, $result, $db);
     }
-
-
-   
 }
 
 function processUserTurn($board, $markup, &$stopGame, $db)
@@ -144,7 +145,7 @@ function processUserTurn($board, $markup, &$stopGame, $db)
             $mark = $board->getMarkup();
             $col = $coords[0] + 1;
             $row = $coords[1] + 1;
-            $db->exec("INSERT INTO stepsInfo (
+            R::exec("INSERT INTO stepsInfo (
                 idGame, 
                 playerMark, 
                 rowCoord, 
@@ -198,7 +199,7 @@ function processComputerTurn($board, $markup, &$stopGame, $db)
             if ($board->determineWinner($i, $j) !== "") {
                 $stopGame = true;
             }  
-            $db->exec("INSERT INTO stepsInfo (
+            R::exec("INSERT INTO stepsInfo (
                 idGame, 
                 playerMark, 
                 rowCoord, 
@@ -222,8 +223,9 @@ function inviteToContinue(&$canContinue)
     do {
         $answer = getValue("Do you want to continue? (y/n)");
         if ($answer === "y") {
-            startGame();
+            $canContinue = true;
         } elseif ($answer === "n") {
+            $canContinue = false;
             exit("Thanks for using\n");
         }
     } while ($answer !== "y" && $answer !== "n");
@@ -232,28 +234,34 @@ function inviteToContinue(&$canContinue)
 function listGames($board)
 {
     $db = $board->openDatabase();
-    $query = $db->query('SELECT * FROM gamesInfo');
-    while ($row = $query->fetchArray()) {
-        line("ID $row[0])\n    Date:$row[1] Time: $row[2]\n    Player Name:$row[3]\n    Size :$row[4]\n    Result:$row[5]");
+    $query = R::getAll("SELECT * FROM 'gamesInfo'");
+    foreach ($query as $row) {
+        line("ID $row[idGame]");
+        line("Date:$row[gameData]");
+        line("Time: $row[gameTime]");
+        line("Player Name:$row[playerName]");
+        line("Size :$row[sizeBoard]");    
+        line("Result:$row[result]");
     }
 }
+
 
 function replayGame($board, $id)
 {
     $db = $board->openDatabase();
-    $idGame = $db->querySingle("SELECT EXISTS(SELECT 1 FROM gamesInfo WHERE idGame='$id')");
+    $idGame = R::getCell("SELECT EXISTS(SELECT 1 FROM gamesInfo WHERE idGame='$id')");
 
     if ($idGame == 1) {
-        $status = $db->querySingle("SELECT result from gamesInfo where idGame = '$id'");
-        $query = $db->query("SELECT rowCoord, colCoord, playerMark from stepsInfo where idGame = '$id'");
-        $dim = $db->querySingle("SELECT sizeBoard from gamesInfo where idGame = '$id'");
+        $status = R::getCell("SELECT result from gamesInfo where idGame = '$id'");
+        $query = R::getAll("SELECT rowCoord, colCoord, playerMark from stepsInfo where idGame = '$id'");
+        $dim = R::getCell("SELECT sizeBoard from gamesInfo where idGame = '$id'");
         $turn = 1;
         line("Game status: " . $status);
         $board->setDimension($dim);
         $board->initialize();
         showGameBoard($board);
-        while ($row = $query->fetchArray()) {
-            $board->setMarkupOnBoard($row[0] - 1, $row[1] - 1, $row[2]);
+        foreach ($query as $row) {
+            $board->setMarkupOnBoard($row['rowCoord'] - 1, $row['colCoord'] - 1, $row['playerMark']);
             showGameBoard($board);
         }
     } else {
