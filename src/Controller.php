@@ -17,39 +17,34 @@
     use const onerayman\TicTacToe\Model\PLAYER_X_MARKUP;
     use const onerayman\TicTacToe\Model\PLAYER_O_MARKUP;
 
-function startGame($argv)
-{
-    if (file_exists("gamedb.db")) {
-        R::setup("sqlite:gamedb.db");
-    }
-    while (true) {
-        $command = prompt("Enter key(--new,--list, --replay [0-9], --help,--exit)");
+    function startGame($argv)
+    {
+        if (file_exists("gamedb.db")) {
+            R::setup("sqlite:gamedb.db");
+        }
+        $gameBoard = new Board();
         if (count($argv) <= 1 || $argv[1] === "--new" || $argv[1] === "-n") {
-        play();
-    } elseif ($argv[1] === "--list" || $argv[1] === "-l") {
-        listGames();
-    } elseif ($argv[1] === "--replay" || $argv[1] === "-r") {
-        if (array_key_exists(2, $argv)) {
-            $id = $argv[2];
-            replayGame($id);
-        } else {
-            \cli\line("There is no id");
-        }
-     } elseif ($argv[1] === "--help" || $argv[1] === "-h") {
+            play($gameBoard);
+        } elseif ($argv[1] === "--list" || $argv[1] === "-l") {
+            listGames($gameBoard);
+        } elseif ($argv[1] === "--replay" || $argv[1] === "-r") {
+            if (array_key_exists(2, $argv)) {
+                $id = $argv[2];
+                replayGame($gameBoard, $id);
+            } else {
+                \cli\line("There is no id");
+            }
+        } elseif ($argv[1] === "--help" || $argv[1] === "-h") {
             gameHelp();
-        }
-    
-     else {
-        \cli\line("Unknown argument!") ;
+        } else {
+            \cli\line("Unknown argument!") ;
         }
     }
-}
 
 function play() {
-    $gameBoard = new Board();
     $canContinue = true;
     do {
-        
+	$gameBoard = new Board();
         initialize($gameBoard);
         gameLoop($gameBoard);
         inviteToContinue($canContinue);
